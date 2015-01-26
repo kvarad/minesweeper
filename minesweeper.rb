@@ -1,13 +1,46 @@
 class Board
   attr_reader :board
+  BOMB_COUNT = 10
 
   def initialize
+    @bomb_coord_arr = []
     @board = Array.new(9) {Array.new(9) {[nil]}}
     @board.each_with_index do |el, x|
       el.each_index do |y|
         @board[x][y] = Tile.new(@board, x, y)
       end
     end
+  end
+
+  def play
+    display
+    puts "Would you like to reveal (R) or flag (F): "
+    choice = gets.chomp[0].upcase
+    case choice
+    when "R"
+      puts "Please enter a coordinate (format: x,y ): "
+      pos = gets.chomp.split(",")
+      @board[pos.first.to_i][pos.last.to_i].reveal(@board)
+    when "F"
+      puts "Please enter a coordinate (format: x,y ): "
+      pos = gets.chomp.split(",")
+      @board[pos.first.to_i][pos.last.to_i].flag
+    end
+
+  end
+
+  def won?
+
+  end
+
+  def bomb_shuffler
+    until @bomb_coord_arr.length == BOMB_COUNT
+      x = (0..8).to_a.sample
+      y = (0..8).to_a.sample
+
+      @bomb_coord_arr << [x,y] unless @bomb_coord_arr.include?([x,y])
+    end
+    @bomb_coord_arr
   end
 
   def display
@@ -19,30 +52,6 @@ class Board
     end
     nil
   end
-
-  # def reveal(x, y)
-  #    if @board[x][y] == "B"
-  #      puts "Game Over"
-  #    elsif @board[x][y].nil?
-  #      next_moves = possible_moves(x, y)
-  #    end
-  # end
-
-  # def possible_moves(x, y)
-  #   new_coord_arr = []
-  #   MOVES.each do |move|
-  #     new_x = move.first + x
-  #     new_y = move.last + y
-  #     if (0..8).include?(new_x) && (0..8).include?(new_y)
-  #       new_coord_arr << [new_x, new_y]
-  #     end
-  #   end
-  #   new_coord_arr
-  # end
-
-  # def checker(new_coord_arr)
-  #
-  # end
 
 end
 
@@ -64,9 +73,9 @@ class Tile
     @board = board
     @position = [x, y]
     @bombed = false
-    @flagged
+    @flagged = false
     @revealed = false
-    @display = "_"
+    @display = "*"
   end
 
   def reveal(board)
@@ -81,7 +90,7 @@ class Tile
       end
       if bomb_counter == 0
         @revealed = true
-        @display = "X"
+        @display = "_"
         next_moves.each do |position|
           current_pos = board[position.first][position.last]
           current_pos.reveal(board) unless current_pos.revealed
@@ -93,9 +102,9 @@ class Tile
     end
   end
 
-  def inspect
-
-  end
+  # def inspect
+  #
+  # end
 
   def neighbors(x, y)
     new_coord_arr = []
@@ -107,6 +116,16 @@ class Tile
       end
     end
     new_coord_arr
+  end
+
+  def flag
+    if @flagged == false
+      @flagged = true
+      @display = "F"
+    else
+      @flagged = false
+      @display = "*"
+    end
   end
 
   def neighbor_bomb_count
