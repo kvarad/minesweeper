@@ -10,6 +10,16 @@ class Board
     end
   end
 
+  def display
+    @board.each_with_index do |el, x|
+      el.each_index do |y|
+        print @board[x][y].display
+      end
+      print "\n"
+    end
+    nil
+  end
+
   # def reveal(x, y)
   #    if @board[x][y] == "B"
   #      puts "Game Over"
@@ -39,14 +49,16 @@ end
 class Tile
   attr_accessor :position, :bombed, :flagged, :revealed, :display
 
-  MOVES = [[-1, 0],
+  MOVES = [
   [-1, -1],
   [-1, 0],
+  [-1, 1],
   [0, -1],
   [0, 1],
-  [-1, 1],
+  [1, -1],
   [1, 0],
-  [1, 1]]
+  [1, 1]
+  ]
 
   def initialize(board, x, y)
     @board = board
@@ -64,16 +76,19 @@ class Tile
     else
       next_moves = neighbors(@position.first, @position.last)
       next_moves.each do |position|
-        if board[position.first][position.last].bombed
-          bomb_counter += 1
+        current_pos = board[position.first][position.last]
+        bomb_counter += 1 if current_pos.bombed
+      end
+      if bomb_counter == 0
+        @revealed = true
+        @display = "X"
+        next_moves.each do |position|
+          current_pos = board[position.first][position.last]
+          current_pos.reveal(board) unless current_pos.revealed
         end
-        if bomb_counter == 0
-          @revealed = true
-          @display = "X"
-        else
-          @revealed = true
-          @display = bomb_counter
-        end
+      else
+        @revealed = true
+        @display = bomb_counter
       end
     end
   end
