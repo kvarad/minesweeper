@@ -1,5 +1,5 @@
 class Board
-  attr_reader :board
+  attr_reader :board, :bomb_coord_arr
   BOMB_COUNT = 10
 
   def initialize
@@ -10,27 +10,35 @@ class Board
         @board[x][y] = Tile.new(@board, x, y)
       end
     end
+    bomb_shuffler
   end
 
   def play
-    display
-    puts "Would you like to reveal (R) or flag (F): "
-    choice = gets.chomp[0].upcase
-    case choice
-    when "R"
-      puts "Please enter a coordinate (format: x,y ): "
-      pos = gets.chomp.split(",")
-      @board[pos.first.to_i][pos.last.to_i].reveal(@board)
-    when "F"
-      puts "Please enter a coordinate (format: x,y ): "
-      pos = gets.chomp.split(",")
-      @board[pos.first.to_i][pos.last.to_i].flag
+    until won?
+      display
+      puts "Would you like to reveal (R) or flag (F): "
+      choice = gets.chomp[0].upcase
+      case choice
+      when "R"
+        puts "Please enter a coordinate (format: x,y ): "
+        pos = gets.chomp.split(",")
+        @board[pos.first.to_i][pos.last.to_i].reveal(@board)
+      when "F"
+        puts "Please enter a coordinate (format: x,y ): "
+        pos = gets.chomp.split(",")
+        @board[pos.first.to_i][pos.last.to_i].flag
+      end
     end
-
   end
 
   def won?
-
+    won = true
+    @board.each do |row|
+      row.each do |el|
+        won = false if !(el.revealed == true || el.bombed == true)
+      end
+    end
+    won
   end
 
   def bomb_shuffler
@@ -40,16 +48,23 @@ class Board
 
       @bomb_coord_arr << [x,y] unless @bomb_coord_arr.include?([x,y])
     end
-    @bomb_coord_arr
+
+    @bomb_coord_arr.each do |coord|
+      @board[coord.first][coord.last].bombed = true
+    end
   end
 
   def display
+    print "  012345678\n"
+    print "-----------\n"
     @board.each_with_index do |el, x|
+      print "#{x}|"
       el.each_index do |y|
         print @board[x][y].display
       end
       print "\n"
     end
+    print "\n"
     nil
   end
 
@@ -119,12 +134,16 @@ class Tile
   end
 
   def flag
-    if @flagged == false
-      @flagged = true
-      @display = "F"
+    unless @revealed
+      if @flagged == false
+        @flagged = true
+        @display = "F"
+      else
+        @flagged = false
+        @display = "*"
+      end
     else
-      @flagged = false
-      @display = "*"
+      puts "You cannot flag a revealed tile."
     end
   end
 
