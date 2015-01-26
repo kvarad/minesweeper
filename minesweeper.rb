@@ -1,10 +1,55 @@
+require 'yaml'
+class Game
+  def initialize
+    @board = Board.new
+  end
+
+  def save
+    saved_game = @board.to_yaml
+  end
+
+  def play
+    until won? || lose?
+      @board.display
+      puts "Would you like to reveal (R) or flag (F) or save game (S): "
+      choice = gets.chomp[0].upcase
+      case choice
+      when "R"
+        puts "Please enter a coordinate (format: x,y ): "
+        pos = gets.chomp.split(",")
+        @board.board[pos.first.to_i][pos.last.to_i].reveal(@board.board)
+      when "F"
+        puts "Please enter a coordinate (format: x,y ): "
+        pos = gets.chomp.split(",")
+        @board.board[pos.first.to_i][pos.last.to_i].flag
+      end
+    end
+    p "Congratulations you swept all the mines!" if won?
+    p "Sorry you blew up!" if lose?
+  end
+
+  def won?
+    @board.tiles.each do |tile|
+      return false if !(tile.revealed == true || tile.bombed == true)
+    end
+    true
+  end
+
+  def lose?
+    @board.tiles.each do |tile|
+      return true if tile.revealed == true && tile.bombed == true
+    end
+    false
+  end
+end
+
 class Board
   attr_reader :board, :bomb_coord_arr
   BOMB_COUNT = 10
 
   def initialize
     @bomb_coord_arr = []
-    @board = Array.new(9) {Array.new(9) {[nil]}}
+    @board = Array.new(9) { Array.new(9) }
     @board.each_with_index do |el, x|
       el.each_index do |y|
         @board[x][y] = Tile.new(@board, x, y)
@@ -13,32 +58,16 @@ class Board
     bomb_shuffler
   end
 
-  def play
-    until won?
-      display
-      puts "Would you like to reveal (R) or flag (F): "
-      choice = gets.chomp[0].upcase
-      case choice
-      when "R"
-        puts "Please enter a coordinate (format: x,y ): "
-        pos = gets.chomp.split(",")
-        @board[pos.first.to_i][pos.last.to_i].reveal(@board)
-      when "F"
-        puts "Please enter a coordinate (format: x,y ): "
-        pos = gets.chomp.split(",")
-        @board[pos.first.to_i][pos.last.to_i].flag
-      end
-    end
-  end
 
-  def won?
-    won = true
+
+  def tiles
+    tiles = []
     @board.each do |row|
       row.each do |el|
-        won = false if !(el.revealed == true || el.bombed == true)
+        tiles << el
       end
     end
-    won
+    tiles
   end
 
   def bomb_shuffler
@@ -96,13 +125,14 @@ class Tile
   def reveal(board)
     bomb_counter = 0
     if self.bombed
-      puts "Game Over"
+      @revealed = true
     else
       next_moves = neighbors(@position.first, @position.last)
       next_moves.each do |position|
         current_pos = board[position.first][position.last]
         bomb_counter += 1 if current_pos.bombed
       end
+
       if bomb_counter == 0
         @revealed = true
         @display = "_"
@@ -116,10 +146,6 @@ class Tile
       end
     end
   end
-
-  # def inspect
-  #
-  # end
 
   def neighbors(x, y)
     new_coord_arr = []
