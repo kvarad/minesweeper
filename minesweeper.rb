@@ -1,11 +1,25 @@
 require 'yaml'
 class Game
+  attr_reader :board
+
   def initialize
-    @board = Board.new
+    puts "New Game (N) or Load Game (L)?"
+    choice = gets.chomp[0].upcase
+    case choice
+    when "N"
+      @board = Board.new
+      @start_time = Time.now
+    when "L"
+      loaded_game = File.read("saved_game")
+      @board = YAML::load(loaded_game)
+    end
   end
 
   def save
-    saved_game = @board.to_yaml
+    saved_game = self.to_yaml
+    File.open("saved_game", "w") do |f|
+      f.print saved_game
+    end
   end
 
   def play
@@ -14,6 +28,8 @@ class Game
       puts "Would you like to reveal (R) or flag (F) or save game (S): "
       choice = gets.chomp[0].upcase
       case choice
+      when "S"
+        save
       when "R"
         puts "Please enter a coordinate (format: x,y ): "
         pos = gets.chomp.split(",")
@@ -26,6 +42,14 @@ class Game
     end
     p "Congratulations you swept all the mines!" if won?
     p "Sorry you blew up!" if lose?
+
+    if won?
+      @end_time = Time.now
+      @best_time = @end_time - @start_time
+      File.open("Leaderboard", "w") do |f|
+        f.print @best_time
+      end
+    end
   end
 
   def won?
